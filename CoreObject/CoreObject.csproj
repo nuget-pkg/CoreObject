@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<IsPackable>true</IsPackable>
+		<LangVersion>latest</LangVersion>
+		<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
+		<Version>2026.0401.0400.31</Version>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Title>CoreObject Library</Title>
+		<PackageId>CoreObject</PackageId>
+		<RootNamespace>CoreObject</RootNamespace>
+		<Product>CoreObject</Product>
+		<Description>CoreObject Library</Description>
+		<PackageProjectUrl>https://github.com/nuget-pkg/CoreObject</PackageProjectUrl>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
+		<NoWarn></NoWarn>
+		<Authors>JavaCommons</Authors>
+		<Company>JavaCommons Technologies</Company>
+		<Copyright>Copyright © JavaCommons Technologies 2026</Copyright>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<!--<PackageTags>json;parser</PackageTags>-->
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PackageReadmeFile>.\README.md</PackageReadmeFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<UseWindowsForms>true</UseWindowsForms>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DebugType>full</DebugType>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="System.IO.Compression" />
+		<Reference Include="System.Linq" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.Web" />
+		<Reference Include="System.Xml" />
+		<Reference Include="System.Xml.Linq" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include=".\README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="CoreParser" Version="2026.401.333.3" />
+		<PackageReference Include="PlainObjectInterface" Version="2026.122.1836.32" />
+	</ItemGroup>
+</Project>
