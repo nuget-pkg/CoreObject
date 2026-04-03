@@ -1,0 +1,30 @@
+#! /usr/bin/env bash.exe
+# -*- mode: sh -*-
+script_dir="$(dirname "$0")"
+script_dir="$(realpath $script_dir)"
+str="$1"
+if [[ "${str:0:1}" == "@" ]]; then
+  if [[ "$str" == "@run" ]]; then
+    shift
+    bash.exe "$script_dir/.r.lib.sh" "$@"
+  elif [[ "$str" == "@exe" ]]; then
+    if [ ! -f "$script_dir/lib.exe" ]; then
+      wingen.exe --dll "$script_dir/lib.dll.cs"
+      bash.exe "$script_dir/.r.lib.sh" "@merge" -f 1>&2
+    fi
+    shift
+    $script_dir/lib.exe "$@"
+  elif [[ "$str" == "@bin" ]]; then
+    if [ ! -f "$script_dir/lib.exe" ]; then
+      wingen.exe --dll "$script_dir/lib.dll.cs"
+      bash.exe "$script_dir/.r.lib.sh" "@pack" -f 1>&2
+    fi
+    shift
+    $script_dir/lib.exe "$@"
+  else
+    bash.exe "$script_dir/.r.lib.sh" "$@"
+  fi
+else
+  cscs -nuget:restore "$script_dir/lib.dll.cs" 1>&2
+  cscs -l:0 "$script_dir/lib.dll.cs" "$@"
+fi
