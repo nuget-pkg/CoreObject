@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net462</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>nullable</WarningsAsErrors>
@@ -23,7 +23,12 @@
 		<Reference Include="System.Xml.Linq" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="EasyObject" Version="2026.617.2129.45" />
+		<PackageReference Include="EasyObject" Version="2026.617.2129.45">
+			<dependentAssembly>
+				<assemblyIdentity name="System.Memory" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
+				<bindingRedirect oldVersion="0.0.0.0-4.0.2.0" newVersion="4.0.2.0" />
+			</dependentAssembly>
+		</PackageReference>
 		<PackageReference Include="coverlet.collector" Version="10.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

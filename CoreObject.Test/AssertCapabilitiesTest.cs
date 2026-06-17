@@ -4,11 +4,14 @@ using CO = Core.CoreObject;
 using static Core.CoreObject;
 // ReSharper disable CheckNamespace
 namespace Core.CoreObjectTest;
-internal class AssertCapabilitiesTest {
+
+internal class AssertCapabilitiesTest
+{
     [NUnit.Framework.SetUp]
-    public void Setup() {
+    public void Setup()
+    {
         TO.ClearSettings();
-        TO.UseAnsiConsole = true;
+        //TO.UseAnsiConsole = true;
         TO.Echo("abc", "def");
         TO.Log(TO.FullName(this));
     }
