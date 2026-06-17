@@ -1,27 +1,28 @@
 ﻿namespace Core;
 
+// ReSharper disable once CheckNamespace
+using Global;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-// ReSharper disable once CheckNamespace
-using Global;
 public enum CoreObjectType
 {
     // ReSharper disable once InconsistentNaming
     @string,
     // ReSharper disable once InconsistentNaming
-    number,
+    @number,
     // ReSharper disable once InconsistentNaming
-    boolean,
+    @boolean,
     // ReSharper disable once InconsistentNaming
     @object,
     // ReSharper disable once InconsistentNaming
-    array,
+    @array,
     // ReSharper disable once InconsistentNaming
     @null
 }
@@ -71,8 +72,10 @@ public class CoreObject :
     // ReSharper disable once MemberCanBePrivate.Global
     public static bool DebugOutput /*= false*/;
     public static bool ShowDetail /*= false*/;
+    public static bool EmojiCompatibleEnvironment = true; /**/
     // ReSharper disable once MemberCanBePrivate.Global
     public static bool ForceAscii /*= false*/;
+    public static bool UseAnsiConsole /*= false*/;
     public object? RealData /*= null*/;
     static CoreObject()
     {
@@ -96,18 +99,18 @@ public class CoreObject :
     // ReSharper disable once InconsistentNaming
     public static CoreObjectType @string => CoreObjectType.@string;
     // ReSharper disable once InconsistentNaming
-    public static CoreObjectType boolean => CoreObjectType.boolean;
+    public static CoreObjectType @boolean => CoreObjectType.@boolean;
     // ReSharper disable once InconsistentNaming
     public static CoreObjectType @object => CoreObjectType.@object;
     // ReSharper disable once InconsistentNaming
-    public static CoreObjectType array => CoreObjectType.array;
+    public static CoreObjectType @array => CoreObjectType.@array;
     // ReSharper disable once InconsistentNaming
     public static CoreObjectType @null => CoreObjectType.@null;
     public bool IsString => TypeValue == CoreObjectType.@string;
-    public bool IsNumber => TypeValue == CoreObjectType.number;
-    public bool IsBoolean => TypeValue == CoreObjectType.boolean;
+    public bool IsNumber => TypeValue == CoreObjectType.@number;
+    public bool IsBoolean => TypeValue == CoreObjectType.@boolean;
     public bool IsObject => TypeValue == CoreObjectType.@object;
-    public bool IsArray => TypeValue == CoreObjectType.array;
+    public bool IsArray => TypeValue == CoreObjectType.@array;
     public bool IsNull => TypeValue == CoreObjectType.@null;
     public CoreObjectType TypeValue
     {
@@ -289,9 +292,19 @@ public class CoreObject :
     {
         return ToPrintable();
     }
-    public string ToPrintable(bool compact = false)
+    public static string ToPrintable(object? x, string? title = null, bool compact = false, uint maxDepth = 0,
+        bool removeSurrogatePair = false)
     {
-        return ToPrintable(this, compact: compact);
+        var poc = new ObjectConverter(JsonParser, ForceAscii);
+        if (maxDepth != 0) x = FromObject(x).Clone(maxDepth, always: false);
+        var printable = poc.ToPrintable(ShowDetail, x, title, compact,
+            removeSurrogatePair);
+        return printable;
+    }
+    public string ToPrintable(bool compact = false, uint maxDepth = 0, bool removeSurrogatePair = false)
+    {
+        return ToPrintable(this, compact: compact, maxDepth: maxDepth,
+            removeSurrogatePair: removeSurrogatePair);
     }
     public static CoreObject NewArray(params object[] args)
     {
@@ -494,81 +507,179 @@ public class CoreObject :
         var poc = new ObjectConverter(JsonParser, ForceAscii);
         return poc.ToPrintable(ShowDetail, x, title, compact);
     }
+    private static string? _DecorateTitle(string? title)
+    {
+        if (title == null) return null;
+        if (!EmojiCompatibleEnvironment)
+        {
+            return title;
+        }
+        if (!title.Contains("⁅markup⁆")
+            && !title.Contains("▶▶▶ REACHED ")
+            && !title.Contains("⁅🌐DUMP🌐⁆") &&
+            !title.Contains("﴾FROM PopupStackTrace()﴿"))
+            title = $"✅❝𝑪𝒉𝒆𝒄𝒌：{title}❞✅";
+        return title;
+    }
     public static void Echo(
         object? x,
         string? title = null,
         bool compact = false,
         uint maxDepth = 0,
-        List<string>? hideKeys = null
+        uint maxCount = 0,
+        List<string>? hideKeys = null,
+        bool removeSurrogatePair = false
     )
     {
+        title = _DecorateTitle(title);
+        ////_EnsureCursorLeft();
         hideKeys ??= new List<string>();
-        if (maxDepth > 0 || hideKeys.Count > 0)
+        if (maxDepth > 0 || maxCount > 0 || hideKeys.Count > 0)
         {
             var eo = FromObject(x);
             x = eo.Clone(
                 maxDepth,
+                maxCount,
                 hideKeys,
                 false);
         }
-        var s = ToPrintable(x, title, compact);
+#if USE_SPECTRE_CONSOLE
+        if (UseAnsiConsole) {
+            if (title != null) StandardOutput.Render($"{title}: ");
+            if (x != null && x is string str)
+                if (StandardOutput.IsMarkupString(str)) {
+                    StandardOutput.RenderLine(str);
+                    return;
+                }
+            var s2 = ToPrintable(x, null, compact, maxDepth,
+                removeSurrogatePair);
+            StandardOutput.WriteLine(s2);
+            return;
+        }
+#endif
+        var s = ToPrintable(x, title, compact, maxDepth,
+            removeSurrogatePair);
         Console.WriteLine(s);
-        System.Diagnostics.Debug.WriteLine(s);
     }
     public static void Log(
         object? x,
         string? title = null,
         bool compact = false,
         uint maxDepth = 0,
-        List<string>? hideKeys = null
+        uint maxCount = 0,
+        List<string>? hideKeys = null,
+        bool removeSurrogatePair = false,
+        bool dontShowLineNumbers = false
     )
     {
+        title = _DecorateTitle(title);
+        ////_EnsureCursorLeft();
         hideKeys ??= new List<string>();
-        if (maxDepth > 0 || hideKeys.Count > 0)
+        if (maxDepth > 0 || maxCount > 0 || hideKeys.Count > 0)
         {
             var eo = FromObject(x);
             x = eo.Clone(
                 maxDepth,
+                maxCount,
                 hideKeys,
                 false);
         }
-        var s = ToPrintable(x, title, compact);
-        Console.Error.WriteLine("[Log] " + s);
-        System.Diagnostics.Debug.WriteLine("[Log] " + s);
+#if USE_SPECTRE_CONSOLE
+        if (UseAnsiConsole) {
+            StandardError.Render("⁅markup⁆[cyan]⁅🌐LOG🌐⁆[/] ");
+            if (title != null) StandardError.Render($"{title}: ");
+            if (x != null && x is string str)
+                if (StandardError.IsMarkupString(str)) {
+                    StandardError.RenderLine(str);
+                    if (!dontShowLineNumbers && ShowLineNumbers)
+                        StandardError.RenderLine(
+                            $"⁅markup⁆[blue]  ➡️➡️ {MarkupSafeString(CurrentSourceCodeLine())}[/]");
+                    return;
+                }
+            var s2 = ToPrintable(x, null, compact, maxDepth,
+                removeSurrogatePair);
+            //var s3 = MarkupSafeString(s2);
+            StandardError.WriteLine(s2);
+            if (ShowLineNumbers)
+                StandardError.RenderLine($"⁅markup⁆[blue]  ➡️➡️ {MarkupSafeString(CurrentSourceCodeLine())}[/]");
+            return;
+        }
+#endif
+        var s = ToPrintable(x, title, compact, maxDepth,
+            removeSurrogatePair);
+        Console.Error.WriteLine("⁅🌐LOG🌐⁆ " + s);
     }
     public static void Debug(
         object? x,
         string? title = null,
         bool compact = false,
         uint maxDepth = 0,
-        List<string>? hideKeys = null
+        uint maxCount = 0,
+        List<string>? hideKeys = null,
+        bool removeSurrogatePair = false
     )
     {
         if (!DebugOutput) return;
+        title = _DecorateTitle(title);
+        ////_EnsureCursorLeft();
         hideKeys ??= new List<string>();
-        if (maxDepth > 0 || hideKeys.Count > 0)
+        if (maxDepth > 0 || maxCount > 0 || hideKeys.Count > 0)
         {
             var eo = FromObject(x);
             x = eo.Clone(
                 maxDepth,
+                maxCount,
                 hideKeys,
                 false);
         }
-        var s = ToPrintable(x, title, compact);
-        Console.Error.WriteLine("[Debug] " + s);
-        System.Diagnostics.Debug.WriteLine("[Debug] " + s);
+#if USE_SPECTRE_CONSOLE
+        if (UseAnsiConsole) {
+            StandardError.Render("⁅markup⁆[purple]⁅✨DEBUG✨⁆[/] ");
+            if (title != null) StandardError.Render($"⁅markup⁆[purple]{MarkupSafeString(title)}:[/] ");
+            var s2 = ToPrintable(x, null, compact, maxDepth,
+                removeSurrogatePair);
+            var s3 = MarkupSafeString(s2);
+            StandardError.RenderLine($"⁅markup⁆[purple]{s3}[/]");
+            StandardError.RenderLine($"⁅markup⁆  ➡️➡️ [purple]{MarkupSafeString(CurrentSourceCodeLine())}[/]");
+            return;
+        }
+#endif
+        var s = ToPrintable(x, title, compact, maxDepth,
+            removeSurrogatePair);
+        Console.Error.WriteLine("⁅✨DEBUG✨⁆ " + s);
     }
     public static void Message(
         object? x,
         string? title = null,
         bool compact = false,
         uint maxDepth = 0,
-        List<string>? hideKeys = null
-    )
-    {
+        uint maxCount = 0,
+        List<string>? hideKeys = null,
+        uint msgBoxFlag = /*MB_ICONINFORMATION*/0x00000040
+    ) {
+        title = _DecorateTitle(title);
+#if false
+        if (!HyperOperatingSystem.IsWindowsPlatform()) {
+            Log(x, title, compact, maxDepth, hideKeys: hideKeys);
+            return;
+        }
+#endif
         if (title == null) title = "Message";
-        var s = ToPrintable(x, title, compact);
-        NativeMethods.MessageBoxW(IntPtr.Zero, s, title, 0);
+        hideKeys ??= new List<string>();
+        if (maxDepth > 0 || maxCount > 0 || hideKeys.Count > 0) {
+            var eo = FromObject(x);
+            x = eo.Clone(
+                maxDepth,
+                maxCount,
+                hideKeys,
+                false);
+        }
+        var s = ToPrintable(x, null, compact);
+        NativeMethods.MessageBoxW(IntPtr.Zero, s, title,
+            // https://housoubu.mizusasi.net/data/prog/p003.html
+            /*MB_OK*/
+            0x00000000 | msgBoxFlag | /*MB_TOPMOST*/0x00040000 | /*MB_SETFOREGROUND*/0x00010000
+        );
     }
     private CoreObject TryAssoc(string name)
     {
@@ -689,18 +800,20 @@ public class CoreObject :
     }
     public void Trim(
         uint maxDepth = 0,
+        uint maxCount = 0,
         List<string>? hideKeys = null
     )
     {
-        CoreObjectEditor.Trim(this, maxDepth, hideKeys);
+        CoreObjectEditor.Trim(this, maxDepth, maxCount, hideKeys);
     }
     public CoreObject Clone(
         uint maxDepth = 0,
+        uint maxCount = 0,
         List<string>? hideKeys = null,
         bool always = true
     )
     {
-        return CoreObjectEditor.Clone(this, maxDepth, hideKeys, always);
+        return CoreObjectEditor.Clone(this, maxDepth, maxCount, hideKeys, always);
     }
     public CoreObject? Shift()
     {

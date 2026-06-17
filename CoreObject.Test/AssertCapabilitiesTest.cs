@@ -1,30 +1,12 @@
-using System;
-using static Core.CoreObject;
+﻿using System;
 using TO = Global.EasyObject;
 using CO = Core.CoreObject;
-
-SetupConsoleEncoding();
-
-DebugOutput = true;
-
-Log("Hello! ハロー© ⁅EMOJI⁆◉▶▸⸝↪️ ↩️ ℴ𝓬➺➢ᰔヾ➠✅🈂️❓❗＼／：＊“≪≫￤；‘｀＃％＄＆＾～￤﴾﴿⁅⁆【】≪≫＋ー＊＝⚽ 𝑪𝒉𝒆𝒄𝒌 🌐🪩");
-
-Debug(new { args });
-//var answer = CoreObject.Add2(11, 22);
-var answer = 33;
-Debug(new { answer });
-
-var test = new AssertTest();
-test.Setup();
-test.Test901();
-test.Setup();
-test.Test902();
-
-internal class AssertTest
-{
+using static Core.CoreObject;
+// ReSharper disable CheckNamespace
+namespace Core.CoreObjectTest;
+internal class AssertCapabilitiesTest {
     [NUnit.Framework.SetUp]
-    public void Setup()
-    {
+    public void Setup() {
         TO.ClearSettings();
         TO.UseAnsiConsole = true;
         TO.Echo("abc", "def");

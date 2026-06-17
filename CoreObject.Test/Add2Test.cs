@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Global;
-using static Global.EasyObjectClassic;
+using static Global.EasyObject;
 
 // ReSharper disable once CheckNamespace
 namespace Test;
